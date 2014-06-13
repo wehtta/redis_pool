@@ -89,31 +89,57 @@ RedisPool.setcmd = function(){
      //    }
    /*****************************the above codes works totally ok********************************************/
    else{
-        var prevcallback = hasCallback? args[argsLength-1]:(function(){});
-        var callback= function(){
+    console.log(hasCallback);
+    var lastarg = args[args.length - 1];
+        var prevcallback, callback;
+        if(hasCallback)
+          prevcallback = lastarg;
+        else{
+          prevcallback = function(){};
+          args.push(prevcallback);
+          }
+
+        callback= function(){
           RedisPool.realease(client);
           return prevcallback.apply(null, arguments);
         };
 
         if(hasCallback)
-          args.pop();
+          args[args.length-1] = callback;
+        if(args.length == 0)
+          args.push(callback);
       
         console.log(args);
-        client["set"].call(client,args,prevcallback);
-   }
-       //  console.log("successful acquire client");
-       // var cmdcallback = hasCallback? args[argsLength-1] : (function(){});
-       // var callback= function(){
-       //   pool.realease(client);
-       //   return cmdcallback.apply(null, arguments);
-       // };
-       // if(hasCallback)
-       //   args[argsLength-1] = callback;
-       // else
-       //   args.push(callback);
-       
-       // return client.set.apply(client, args);
-     //}
+        client["set"].apply(client,args);
+   
+
+
+   /**********This bellow code is OK*******************/
+        // var _callback, callback;
+        //   var lastArg = args[args.length - 1];
+        //   var lastArgType = typeof lastArg;
+        //   if (lastArgType === 'function') {
+        //     _callback = lastArg;
+        //   } else if (lastArgType === 'undefined') {
+        //     _callback = function() {};
+        //   } else {
+        //     _callback = function() {};
+        //     args.push(_callback);
+        //   }
+        //   callback = function() {
+        //     RedisPool.release(client);
+        //     console.log("callback called");
+        //     return _callback.apply(null, arguments);
+        //   };
+        //   if (argsLength === 0) {
+        //     args.push(callback);
+        //   } else {
+        //     args[args.length - 1] = callback;
+        //   }
+        //   console.log("lastcallargs" + args);
+     
+        //   client["set"].apply(client, args);
+        }
 
    });
  //};
