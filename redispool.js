@@ -45,6 +45,7 @@ var RedisPool = poolModule.Pool({
 
 
 RedisPool.setcmd = function(){
+  console.log(arguments);
 // return function() {
   console.log(arguments);
    var args, argsLength;
@@ -88,37 +89,31 @@ RedisPool.setcmd = function(){
      //    }
    /*****************************the above codes works totally ok********************************************/
    else{
-   //      var prevcallback = hasCallback? args[args.length-1]:(function(){});
-   //      if( !hasCallback)
-   //        args.push(prevcallback);
+        var prevcallback = hasCallback? args[argsLength-1]:(function(){});
+        var callback= function(){
+          RedisPool.realease(client);
+          return prevcallback.apply(null, arguments);
+        };
 
-   //      var callback= function(){
-   //        pool.realease(client);
-   //        return prevcallback.apply(null, arguments);
-   //      };
-
-        
-   //      args[args.length-1] = callback;
-   //      console.log(args);
+        if(hasCallback)
+          args.pop();
       
-
-   //      client["set"].apply(client,args);
-   // }
-       var cmdcallback = hasCallback? args[argsLength-1] : (function(){});
-       if(! hasCallback)
-       args.push(cmdcallback);
-
-       var callback= function(){
-         RedisPool.realease(client);
-         return cmdcallback.apply(null, arguments);
-       };
-       if(hasCallback)
-         args.pop();
-         
-       console.log(args);
-       console.log(callback);
-       return client["set"].call(client, args, callback);
-     }
+        console.log(args);
+        client["set"].call(client,args,prevcallback);
+   }
+       //  console.log("successful acquire client");
+       // var cmdcallback = hasCallback? args[argsLength-1] : (function(){});
+       // var callback= function(){
+       //   pool.realease(client);
+       //   return cmdcallback.apply(null, arguments);
+       // };
+       // if(hasCallback)
+       //   args[argsLength-1] = callback;
+       // else
+       //   args.push(callback);
+       
+       // return client.set.apply(client, args);
+     //}
 
    });
  //};
