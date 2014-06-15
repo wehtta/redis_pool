@@ -100,7 +100,7 @@ RedisPool.setcmd = function(){
           }
 
         callback= function(){
-          RedisPool.realease(client);
+          RedisPool.release(client);
           return prevcallback.apply(null, arguments);
         };
 
