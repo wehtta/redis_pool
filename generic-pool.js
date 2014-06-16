@@ -225,13 +225,13 @@
         obj = void 0;
         clientCb = waitingClients.dequeue();
         console.log(clientCb);
-        console.log(arguments_);
-        if (arguments_.length > 1) {
-          err = arguments_[0];
-          obj = arguments_[1];
+        console.log(arguments);
+        if (arguments.length > 1) {
+          err = arguments[0];
+          obj = arguments[1];
         } else {
-          err = (arguments_[0] instanceof Error ? arguments_[0] : null);
-          obj = (arguments_[0] instanceof Error ? null : arguments_[0]);
+          err = (arguments[0] instanceof Error ? arguments[0] : null);
+          obj = (arguments[0] instanceof Error ? null : arguments[0]);
         }
         if (err) {
           count -= 1;
