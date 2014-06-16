@@ -94,14 +94,15 @@
       }
     };
     dispense = function() {
-      var clientCb, waitingCount;
+      var clientCb, objTimeout, waitingCount;
       waitingCount = waitingClients.size();
       log("dispense() clients=" + waitingCount + "available=" + availableObjects, "info");
       if (waitingCount > 0) {
         if (availableObjects.length > 0) {
+          objTimeout = availableObjects[0];
           availableObjects.shift();
           clientCb = waitingClients.dequeue();
-          clientCb(null, availableObjects[0].obj);
+          clientCb(null, objTimeout.obj);
         }
         if (count < factory.max) {
           return createResource();
@@ -135,7 +136,7 @@
     ensureMinimum = function() {
       var _results;
       _results = [];
-      while (!(count >= factory.min)) {
+      while (count < factory.min) {
         _results.push(createResource());
       }
       return _results;
@@ -210,6 +211,7 @@
         if (err) {
           return callback("error while acquire client", null);
         } else {
+          console.log(client);
           args.shift();
           args.pop();
           return client[cmd](args, function(err, result) {

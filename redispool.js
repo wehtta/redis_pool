@@ -1,6 +1,7 @@
 
 //var poolModule= require("generic-pool")
-var poolModule= require("./pool.js");
+//var poolModule= require("./generic-pool.js");
+var poolModule = require("./pool.js");
 var redis = require("redis");
 
 
@@ -21,7 +22,7 @@ var RedisPool = poolModule.Pool({
      // max: config.maxRedisConnection,
      // min: config.minRedisConnection,
       idleTimeoutMillis: 30000,
-      log: false,
+      log: false
 });
 
 
@@ -29,22 +30,27 @@ RedisPool.execcmd("set", "key34", "value1", function(err, result){
   if(err)
     console.log ("execcmd error");
   else
-    console.log("successfully"+result);
+    RedisPool.execcmd("get", "key34", function(err, res){
+        if( err)
+            console.log("get value error");
+        else
+            console.log("successfully"+res);
+    });
 });
 
-RedisPool.execcmd("hset", "hashkey", "location", "beijing", function(err, result){
-  if(err)
-    console.log ("execcmd error");
-  else
-    console.log("successfully"+result);
-});
+//RedisPool.execcmd("hset", "hashkey", "location", "beijing", function(err, result){
+//  if(err)
+//    console.log ("execcmd error");
+//  else
+//    console.log("successfully"+result);
+//});
 
-// RedisPool.execcmd("get", "key2", function(err, result){
-//   if(err)
-//     console.log("exccmd get error");
-//   else
-//     console.log("In redis the key2's value is "+value);
-// });
+RedisPool.execcmd("get", "key34", function(err, result){
+   if(err)
+     console.log("exccmd get error");
+   else
+     console.log("In redis the key2's value is "+result);
+});
 
 
 

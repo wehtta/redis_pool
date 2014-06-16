@@ -117,10 +117,10 @@ module.exports.Pool = (factory) ->
 		log "dispense() clients="+waitingCount+"available="+availableObjects, "info"
 		if waitingCount > 0
 			if 	availableObjects.length > 0
-				#objTimeout = availableObjects[0]
+				objTimeout = availableObjects[0]
 				availableObjects.shift()
 				clientCb = waitingClients.dequeue()
-				clientCb null, availableObjects[0].obj
+				clientCb null, objTimeout.obj
 
 			if count < factory.max
 				createResource()
@@ -144,7 +144,8 @@ module.exports.Pool = (factory) ->
 					me.release client
 
 	ensureMinimum =()->
-			createResource() until count>= factory.min
+			while count < factory.min
+        createResource()
 
 	me.release = (obj) ->
 		if(availableObjects.some (objWithTimeout)->
