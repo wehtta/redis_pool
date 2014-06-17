@@ -15,6 +15,7 @@
 # 		prio_array.splice mid, 0, objWithPrio
 
 # 	dequeue: ()->
+
 # 		if prio_array.length > 0
 # 			return prio_array.shift()["obj"]
 # 	size: () ->
@@ -132,13 +133,13 @@ module.exports.Pool = (factory) ->
 			if(err)
 				console.log "createResource error"
 				count-=1
-				if(clientCb)
+				if clientCb
 					clientCb err, null
 				else
 					process.nextTick ()->
 						dispense()
-			else
-				if(clientCb)
+			else 
+				if clientCb 
 					return clientCb null, client
 				else 
 					me.release client
@@ -154,7 +155,7 @@ module.exports.Pool = (factory) ->
 
 		else
 			objWithTimeout = { obj: obj, timeout: new Date().getTime()+idleTimeoutMillis}
-			availableObjects.push objWithTimeout.obj
+			availableObjects.push objWithTimeout
 			dispense()
 
 			scheduleRemoveIdle()
@@ -172,7 +173,7 @@ module.exports.Pool = (factory) ->
 				toRemove.push obj
 
 		for aobj in toRemove
-			me.destroy aobj
+			me.destroy aobj.obj
 
 		removeIdleScheduled = false
 		if( availableObjects.length > 0 )
@@ -203,6 +204,7 @@ module.exports.Pool = (factory) ->
 			if(err)
 				callback "error while acquire client", null
 			else
+				#console.log "the client is " + client
 				# cmdcallback = ()->
 				# 	console.log "cmdcallback called"
 				# 	me.release client

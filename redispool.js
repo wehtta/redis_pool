@@ -22,40 +22,32 @@ var RedisPool = poolModule.Pool({
      // max: config.maxRedisConnection,
      // min: config.minRedisConnection,
       idleTimeoutMillis: 30000,
-      log: false
+      log: false,
+      max: 10,
+      min: 3
 });
 
 
-RedisPool.execcmd("set", "key34", "value1", function(err, result){
-  if(err)
-    console.log ("execcmd error");
-  else
-    RedisPool.execcmd("get", "key34", function(err, res){
-        if( err)
-            console.log("get value error");
-        else
-            console.log("successfully"+res);
-    });
-});
+// RedisPool.execcmd("set", "key34", "value1", function(err, result){
+//   if(err)
+//     console.log ("execcmd error");
+//   else
+//     RedisPool.execcmd("get", "key34", function(err, res){
+//         if( err)
+//             console.log("get value error");
+//         else
+//             console.log("successfully"+res);
+//     });
+// });
 
-//RedisPool.execcmd("hset", "hashkey", "location", "beijing", function(err, result){
+// RedisPool.execcmd("hset", "hashkey", "location", "beijing", function(err, result){
 //  if(err)
 //    console.log ("execcmd error");
 //  else
 //    console.log("successfully"+result);
-//});
+// });
 
-RedisPool.execcmd("get", "key34", function(err, result){
-   if(err)
-     console.log("exccmd get error");
-   else
-     console.log("In redis the key2's value is "+result);
-});
-
-
-
-
-
+module.exports = RedisPool;
 // RedisPool.setcmd = function(){
 //   console.log(arguments);
 // // return function() {
