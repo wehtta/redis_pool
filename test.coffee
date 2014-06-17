@@ -1,14 +1,15 @@
 should = require "should"
-Pool = require "./redispool.js"
+RedisPool = require "./redispool.js"
 sinon = require "sinon"
+Pool= require "./pool.js"
 
 describe "function behaviour test",()->
-	it "unit test Pool.acquire", (done)->
-		spy = sinon.spy Pool, "acquire"
-		spy1 = sinon.spy Pool, "release"
-		spy2 = sinon.spy Pool, "destroy"
+	it "unit test RedisPool.acquire", (done)->
+		spy = sinon.spy RedisPool, "acquire"
+		spy1 = sinon.spy RedisPool, "release"
+		spy2 = sinon.spy RedisPool, "destroy"
 
-		Pool.execcmd "flushdb", (err, result)->
+		RedisPool.execcmd "flushdb", (err, result)->
 			if err
 				done err
 			else	
@@ -17,10 +18,59 @@ describe "function behaviour test",()->
 				#spy2.called.should.equal true	//a period timeout
 				done()
 
+describe "client pool test ", ()->
+	it "test the ensure minimum", (done)->
+		createCounter = 0
+		destroyCounter = 0
+		factory = 
+			name: "redis"
+			create : (callback)->
+    	  		callback null, ++createCounter 
+    	  	destroy : (callback)->
+    	  		callback null, ++destroyCounter
+   	
+    	  	idleTimeoutMillis: 30000
+    	  	log: false
+    	  	max: 10
+    	  	min: 3
+	
+		testPool = Pool.Pool factory
+		createCounter.should.equal 3
+		done()
 
-describe "test RedisPool" ,()->
+	it "test the limit to maximum", (done)->
+		createCounter = 0
+		destroyCounter = 0
+		factory = 
+			name: "redis"
+			create : (callback)->
+    	  		callback null, ++createCounter 
+    	  	destroy : ()->
+    	  		callback null, ++destroyCounter
+   	
+    	  	idleTimeoutMillis: 3000
+    	  	log: false
+    	  	max: 10
+    	  	min: 3
+
+		testPool = Pool.Pool factory
+		
+		for i in [1..20]
+    		res = testPool.acquire (err, counter) ->
+    			typeof counter == "number"
+
+    		console.log res
+    		if !res
+    			testPool.count.should.equal 11
+    			break;	
+    	done()
+    			
+
+    
+
+describe "test RedisRedisPool" ,()->
 	before (done)->
-		Pool.execcmd "flushdb", (err, result)->
+		RedisPool.execcmd "flushdb", (err, result)->
 			if err
 				done err
 			else
@@ -30,21 +80,21 @@ describe "test RedisPool" ,()->
 
 
 	it "test redis set cmd and renamecmd", (done)->
-		Pool.execcmd "set", "hainan", "haikou",  (err, result)->
+		RedisPool.execcmd "set", "hainan", "haikou",  (err, result)->
 			if err
 				done err
 			else
 				result.should.equal "OK"
 				done()
 
-	it "test redispool hmset cmd", (done)->
-		Pool.execcmd "hmset" ,"student", "name", "Jim", "location", "beijing", (err, result)->
+	it "test redisRedisPool hmset cmd", (done)->
+		RedisPool.execcmd "hmset" ,"student", "name", "Jim", "location", "beijing", (err, result)->
 			if err
 				done err
 			else
 				console.log result
 				result.should.equal "OK"
-				Pool.execcmd "hgetall", "student", (err, res)->
+				RedisPool.execcmd "hgetall", "student", (err, res)->
 					if err 
 						done err
 					else
@@ -52,13 +102,13 @@ describe "test RedisPool" ,()->
 						res.should.eql {"name": "Jim", "location": "beijing"}
 						done()
 
-	it "test redispool rename", (done)->
-		Pool.execcmd "rename", "hainan", "renamekey", (err, result)->
+	it "test redisRedisPool rename", (done)->
+		RedisPool.execcmd "rename", "hainan", "renamekey", (err, result)->
 			if err
 				done err
 			else
 				result.should.equal "OK"
-				Pool.execcmd  "get", "renamekey", (err, res)->
+				RedisPool.execcmd  "get", "renamekey", (err, res)->
 					if err
 						done err
 					else
@@ -67,24 +117,24 @@ describe "test RedisPool" ,()->
 						done()
 
 
-	it "test redispool hdel", (done) ->
-		Pool.execcmd "hdel", "student", "location", "beijing", (err, result) ->
+	it "test redisRedisPool hdel", (done) ->
+		RedisPool.execcmd "hdel", "student", "location", "beijing", (err, result) ->
 			if err
 				done err
 			else
-				Pool.execcmd "hgetall", "student", (err, res) ->
+				RedisPool.execcmd "hgetall", "student", (err, res) ->
 					if err
 						done err
 					else
 						res.should.eql {"name": "Jim"}
 						done()
 
-	it "test redispool push and pop", (done)->
-		Pool.execcmd "lpush", "city", "shanghai", "beijing", (err, result)->
+	it "test redisRedisPool push and pop", (done)->
+		RedisPool.execcmd "lpush", "city", "shanghai", "beijing", (err, result)->
 			if err
 				done err
 			else
-				Pool.execcmd "rpop", "city", (err, res)->
+				RedisPool.execcmd "rpop", "city", (err, res)->
 					if err
 						done err
 					else

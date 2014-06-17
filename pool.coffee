@@ -1,87 +1,87 @@
 
-# priorityQueue = () ->
-# 	prio_array = []
-# 	enqueue: (obj, priority=1)->
-# 		objWithPrio = {"obj" : obj, "priority": priority}
-# 		min = max =0 
+priorityQueue = () ->
+	prio_array = []
+	enqueue: (obj, priority=1)->
+		objWithPrio = {"obj" : obj, "priority": priority}
+		min = max =0 
 
-# 		if(prio_array.length == 0)
-# 			return prio_array[0]=objWithPrio
-# 		loop
-# 			break if min > max
-# 			mid = (min+max) /2		
-# 			min = mid+1 if (priority > prio_array[mid].priority )
-# 			max = mid-1 if (priority < prio_array[mid].priority)
-# 		prio_array.splice mid, 0, objWithPrio
+		if(prio_array.length == 0)
+			return prio_array[0]=objWithPrio
+		loop
+			break if min > max
+			mid = (min+max) /2		
+			min = mid+1 if (priority > prio_array[mid].priority )
+			max = mid-1 if (priority < prio_array[mid].priority)
+		prio_array.splice mid, 0, objWithPrio
 
-# 	dequeue: ()->
+	dequeue: ()->
 
-# 		if prio_array.length > 0
-# 			return prio_array.shift()["obj"]
-# 	size: () ->
-# 		return prio_array.length
-priorityQueue = (size) ->
-  me = {}
-  slots = undefined
-  i = undefined
-  total = null
+		if prio_array.length > 0
+			return prio_array.shift()["obj"]
+	size: () ->
+		return prio_array.length
+# priorityQueue = (size) ->
+#   me = {}
+#   slots = undefined
+#   i = undefined
+#   total = null
   
-  # initialize arrays to hold queue elements
-  size = Math.max(+size | 0, 1)
-  slots = []
-  i = 0
-  while i < size
-    slots.push []
-    i += 1
+#   # initialize arrays to hold queue elements
+#   size = Math.max(+size | 0, 1)
+#   slots = []
+#   i = 0
+#   while i < size
+#     slots.push []
+#     i += 1
   
-  #  Public methods
-  me.size = ->
-    i = undefined
-    if total is null
-      total = 0
-      i = 0
-      while i < size
-        total += slots[i].length
-        i += 1
-    total
+#   #  Public methods
+#   me.size = ->
+#     i = undefined
+#     if total is null
+#       total = 0
+#       i = 0
+#       while i < size
+#         total += slots[i].length
+#         i += 1
+#     total
 
-  me.enqueue = (obj, priority) ->
-    priorityOrig = undefined
+#   me.enqueue = (obj, priority) ->
+#     priorityOrig = undefined
     
-    # Convert to integer with a default value of 0.
-    priority = priority and +priority | 0 or 0
+#     # Convert to integer with a default value of 0.
+#     priority = priority and +priority | 0 or 0
     
-    # Clear cache for total.
-    total = null
-    if priority
-      priorityOrig = priority
-      if priority < 0 or priority >= size
-        priority = (size - 1)
+#     # Clear cache for total.
+#     total = null
+#     if priority
+#       priorityOrig = priority
+#       if priority < 0 or priority >= size
+#         priority = (size - 1)
         
-        # put obj at the end of the line
-        console.error "invalid priority: " + priorityOrig + " must be between 0 and " + priority
-    slots[priority].push obj
-    return
+#         # put obj at the end of the line
+#         console.error "invalid priority: " + priorityOrig + " must be between 0 and " + priority
+#     slots[priority].push obj
+#     return
 
-  me.dequeue = (callback) ->
-    obj = null
-    i = undefined
-    sl = slots.length
+#   me.dequeue = (callback) ->
+#     obj = null
+#     i = undefined
+#     sl = slots.length
     
-    # Clear cache for total.
-    total = null
-    i = 0
-    while i < sl
-      if slots[i].length
-        obj = slots[i].shift()
-        break
-      i += 1
-    obj
+#     # Clear cache for total.
+#     total = null
+#     i = 0
+#     while i < sl
+#       if slots[i].length
+#         obj = slots[i].shift()
+#         break
+#       i += 1
+#     obj
 
-  me
+#   me
 
 
-module.exports.Pool = (factory) ->
+module.exports.Pool = (factory, test) ->
 	me = {}
 	idleTimeoutMillis = factory.idleTimeoutMillis ||3000
 	reapInterval = factory.reapInterval||1000
@@ -104,7 +104,7 @@ module.exports.Pool = (factory) ->
 
 	factory.max = Math.max (if isNaN factory.max then 1 else  factory.max), 1
 	factory.min = Math.min (if isNaN factory.min then 0 else factory.min) , factory.max-1
-
+ 
 	me.acquire = (callback, priority)->
 		if draining
 			throw new Error "pool is draining error"
@@ -112,6 +112,7 @@ module.exports.Pool = (factory) ->
 		else
 			waitingClients.enqueue callback, priority
 			dispense()
+			count < factory.max
 
 	dispense = () ->
 		waitingCount = waitingClients.size()

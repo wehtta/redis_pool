@@ -3,65 +3,49 @@ var priorityQueue,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
   __slice = [].slice;
 
-priorityQueue = function(size) {
-  var i, me, slots, total;
-  me = {};
-  slots = void 0;
-  i = void 0;
-  total = null;
-  size = Math.max(+size | 0, 1);
-  slots = [];
-  i = 0;
-  while (i < size) {
-    slots.push([]);
-    i += 1;
-  }
-  me.size = function() {
-    i = void 0;
-    if (total === null) {
-      total = 0;
-      i = 0;
-      while (i < size) {
-        total += slots[i].length;
-        i += 1;
+priorityQueue = function() {
+  var prio_array;
+  prio_array = [];
+  return {
+    enqueue: function(obj, priority) {
+      var max, mid, min, objWithPrio;
+      if (priority == null) {
+        priority = 1;
       }
-    }
-    return total;
-  };
-  me.enqueue = function(obj, priority) {
-    var priorityOrig;
-    priorityOrig = void 0;
-    priority = priority && +priority | 0 || 0;
-    total = null;
-    if (priority) {
-      priorityOrig = priority;
-      if (priority < 0 || priority >= size) {
-        priority = size - 1;
-        console.error("invalid priority: " + priorityOrig + " must be between 0 and " + priority);
+      objWithPrio = {
+        "obj": obj,
+        "priority": priority
+      };
+      min = max = 0;
+      if (prio_array.length === 0) {
+        return prio_array[0] = objWithPrio;
       }
-    }
-    slots[priority].push(obj);
-  };
-  me.dequeue = function(callback) {
-    var obj, sl;
-    obj = null;
-    i = void 0;
-    sl = slots.length;
-    total = null;
-    i = 0;
-    while (i < sl) {
-      if (slots[i].length) {
-        obj = slots[i].shift();
-        break;
+      while (true) {
+        if (min > max) {
+          break;
+        }
+        mid = (min + max) / 2;
+        if (priority > prio_array[mid].priority) {
+          min = mid + 1;
+        }
+        if (priority < prio_array[mid].priority) {
+          max = mid - 1;
+        }
       }
-      i += 1;
+      return prio_array.splice(mid, 0, objWithPrio);
+    },
+    dequeue: function() {
+      if (prio_array.length > 0) {
+        return prio_array.shift()["obj"];
+      }
+    },
+    size: function() {
+      return prio_array.length;
     }
-    return obj;
   };
-  return me;
 };
 
-module.exports.Pool = function(factory) {
+module.exports.Pool = function(factory, test) {
   var availableObjects, count, createResource, dispense, draining, ensureMinimum, idleTimeoutMillis, log, me, reapInterval, refreshIdle, removeIdle, removeIdleScheduled, removedIdleTimer, scheduleRemoveIdle, waitingClients;
   me = {};
   idleTimeoutMillis = factory.idleTimeoutMillis || 3000;
@@ -89,7 +73,8 @@ module.exports.Pool = function(factory) {
       throw new Error("pool is draining error");
     } else {
       waitingClients.enqueue(callback, priority);
-      return dispense();
+      dispense();
+      return count < factory.max;
     }
   };
   dispense = function() {
