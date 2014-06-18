@@ -128,6 +128,7 @@ module.exports.Pool = (factory, test) ->
 				createResource()
 
 	createResource = ()->
+		console.log factory.create.toString()
 		count+=1
 		clientCb = waitingClients.dequeue()
 		factory.create (err, client)->
@@ -180,7 +181,7 @@ module.exports.Pool = (factory, test) ->
 		if( availableObjects.length > 0 )
 			scheduleRemoveIdle()
 		else
-			log  "all avaiableobects has been removed"  
+			log  "all availableobects has been removed"  
 
 	me.destroy =(objclient)->
 		count -=1;
@@ -202,6 +203,9 @@ module.exports.Pool = (factory, test) ->
 		if typeof args[0] == "string" then cmd = args[0] else return callback "error has no cmd", null
 		
 		me.acquire (err, client)->
+			# console.log client
+			console.log "****||**"+err+"****||***"+client
+			console.log client.toString()
 			if(err)
 				callback "error while acquire client", null
 			else
@@ -217,13 +221,22 @@ module.exports.Pool = (factory, test) ->
 				# client[cmd].apply client, args
 				args.shift()
 				args.pop()
+				# console.log cmd
+				# console.log client[cmd]
+				# console.log client
+
 				client[cmd] args, (err, result)->
 					me.release client
 					if(err)
 						callback null, result
 					else
 						callback err, result
+	me.getCount = ()->
+		count
+	me.getAvailableObjects =()->
+		availableObjects
 
+	me.getWaitingClients = ()-> waitingClients
 
 	ensureMinimum()
 	return me

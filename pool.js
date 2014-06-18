@@ -95,6 +95,7 @@ module.exports.Pool = function(factory, test) {
   };
   createResource = function() {
     var clientCb;
+    console.log(factory.create.toString());
     count += 1;
     clientCb = waitingClients.dequeue();
     return factory.create(function(err, client) {
@@ -165,7 +166,7 @@ module.exports.Pool = function(factory, test) {
     if (availableObjects.length > 0) {
       return scheduleRemoveIdle();
     } else {
-      return log("all avaiableobects has been removed");
+      return log("all availableobects has been removed");
     }
   };
   me.destroy = function(objclient) {
@@ -192,6 +193,8 @@ module.exports.Pool = function(factory, test) {
       return callback("error has no cmd", null);
     }
     return me.acquire(function(err, client) {
+      console.log("****||**" + err + "****||***" + client);
+      console.log(client.toString());
       if (err) {
         return callback("error while acquire client", null);
       } else {
@@ -207,6 +210,15 @@ module.exports.Pool = function(factory, test) {
         });
       }
     });
+  };
+  me.getCount = function() {
+    return count;
+  };
+  me.getAvailableObjects = function() {
+    return availableObjects;
+  };
+  me.getWaitingClients = function() {
+    return waitingClients;
   };
   ensureMinimum();
   return me;
