@@ -95,7 +95,6 @@ module.exports.Pool = function(factory, test) {
   };
   createResource = function() {
     var clientCb;
-    console.log(factory.create.toString());
     count += 1;
     clientCb = waitingClients.dequeue();
     return factory.create(function(err, client) {
@@ -187,14 +186,15 @@ module.exports.Pool = function(factory, test) {
     } else {
       callback = args[args.length - 1];
     }
+    if (typeof args[0] !== "string") {
+      throw "first argument is not string";
+    }
     if (typeof args[0] === "string") {
       cmd = args[0];
     } else {
       return callback("error has no cmd", null);
     }
     return me.acquire(function(err, client) {
-      console.log("****||**" + err + "****||***" + client);
-      console.log(client.toString());
       if (err) {
         return callback("error while acquire client", null);
       } else {

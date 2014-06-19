@@ -16,8 +16,6 @@ factory = {
   create: function(callback) {
     var cachedClient;
     cachedClient = redis.createClient();
-    console.log(cachedClient.toString());
-    console.log("******" + cachedClient + "*******");
     cachedClient.on("error", function(err) {
       return console.log("error during process" + err);
     });
@@ -32,8 +30,8 @@ factory = {
   min: 0
 };
 
-describe("test pool create", function() {
-  return it("test pool create", function(done) {
+describe("test pool ", function() {
+  it("test pool create", function(done) {
     var RedisPool, mockClient;
     mockClient = {
       name: "mockclient"
@@ -50,7 +48,88 @@ describe("test pool create", function() {
     return RedisPool.execcmd("set", "testkey", "testvalue", function(err, result) {
       console.log(err);
       console.log(result);
+      mockClient.set.calledOnce.should.ok;
       result.should.equal("OK");
+      return done();
+    });
+  });
+  it("test pool destroy", function(done) {
+    var RedisPool, desCount, spy;
+    desCount = 0;
+    factory.idleTimeoutMillis = 100;
+    sinon.stub(factory, "destroy", function() {
+      return ++desCount;
+    });
+    RedisPool = Pool.Pool(factory);
+    spy = sinon.spy(factory, "create");
+    RedisPool.acquire(function(err, client) {
+      return RedisPool.release(client);
+    });
+    return setTimeout(function() {
+      desCount.should.equal(1);
+      spy.calledOnce.should.ok;
+      factory.create.restore();
+      factory.destroy.restore();
+      return done();
+    }, 100);
+  });
+  it("ensure the minimal", function(done) {
+    var RedisPool, spy;
+    factory.min = 3;
+    spy = sinon.spy(factory, "create");
+    RedisPool = Pool.Pool(factory);
+    return setTimeout(function() {
+      spy.callCount.should.equal(3);
+      factory.create.restore();
+      return done();
+    }, 100);
+  });
+  it("test available during idleTimeoutMillis", function(done) {
+    var RedisPool, spy;
+    factory.min = 3;
+    spy = sinon.spy(factory, "destroy");
+    RedisPool = Pool.Pool(factory);
+    return setTimeout(function() {
+      spy.callCount.should.equal(0);
+      factory.destroy.restore();
+      return done();
+    }, 100);
+  });
+  it("test limit to factory.max", function(done) {
+    var RedisPool, i, spy, _i;
+    factory.max = 10;
+    spy = sinon.spy(factory, "create");
+    RedisPool = Pool.Pool(factory);
+    for (i = _i = 1; _i <= 12; i = ++_i) {
+      RedisPool.acquire(function(err, client) {
+        return RedisPool.release(client);
+      });
+    }
+    return setTimeout(function() {
+      spy.callCount.should.equal(10);
+      factory.create.restore();
+      return done();
+    }, 100);
+  });
+  return it("test get client when client release", function(done) {
+    var RedisPool, clientid, i, spy, _i;
+    factory.max = 10;
+    clientid = 0;
+    factory.create = function(callback) {
+      return callback(null, ++clientid);
+    };
+    spy = sinon.spy(factory, "create");
+    RedisPool = Pool.Pool(factory);
+    for (i = _i = 1; _i <= 10; i = ++_i) {
+      RedisPool.acquire(function(err, client) {
+        if (client === 9) {
+          return setTimeout(RedisPool.release(client, 50));
+        }
+      });
+    }
+    return RedisPool.acquire(function(err, clientid) {
+      spy.callCount.should.equal(10);
+      clientid.should.equal(9);
       return done();
     });
   });

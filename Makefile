@@ -5,8 +5,18 @@ TESTS = $(shell find ./test/* -name "*.test.js")
 INTEGRATIONS = $(shell find ./test/* -name "*.integration.js")
 ALL = $(shell find ./test/* -name "*.js")
 
-test:
+testpool:
 	@mocha \
 		--reporter spec \
 		$(MOCHA_OPTS) \
 		test.coffee
+
+testredis:
+	@mocha \
+		--reporter spec \
+		$(MOCHA_OPTS) \
+		testRedisPool.coffee
+
+test:
+	testpool
+	testRedisPool

@@ -1,25 +1,25 @@
 
 priorityQueue = () ->
-	prio_array = []
-	enqueue: (obj, priority=1)->
-		objWithPrio = {"obj" : obj, "priority": priority}
-		min = max =0 
+  prio_array = []
+  enqueue: (obj, priority=1)->
+    objWithPrio = {"obj" : obj, "priority": priority}
+    min = max =0 
 
-		if(prio_array.length == 0)
-			return prio_array[0]=objWithPrio
-		loop
-			break if min > max
-			mid = (min+max) /2		
-			min = mid+1 if (priority > prio_array[mid].priority )
-			max = mid-1 if (priority < prio_array[mid].priority)
-		prio_array.splice mid, 0, objWithPrio
+    if(prio_array.length == 0)
+      return prio_array[0]=objWithPrio
+    loop
+      break if min > max
+      mid = (min+max) /2    
+      min = mid+1 if (priority > prio_array[mid].priority )
+      max = mid-1 if (priority < prio_array[mid].priority)
+    prio_array.splice mid, 0, objWithPrio
 
-	dequeue: ()->
+  dequeue: ()->
 
-		if prio_array.length > 0
-			return prio_array.shift()["obj"]
-	size: () ->
-		return prio_array.length
+    if prio_array.length > 0
+      return prio_array.shift()["obj"]
+  size: () ->
+    return prio_array.length
 # priorityQueue = (size) ->
 #   me = {}
 #   slots = undefined
@@ -82,162 +82,163 @@ priorityQueue = () ->
 
 
 module.exports.Pool = (factory, test) ->
-	me = {}
-	idleTimeoutMillis = factory.idleTimeoutMillis ||3000
-	reapInterval = factory.reapInterval||1000
-	refreshIdle = if ('refreshIdle' in factory)then factory.refreshIdle else true
-	availableObjects = []
-	waitingClients = new priorityQueue()
-	count =0
-	removeIdleScheduled = false
-	removedIdleTimer = null
-	draining = false
-	log = if factory.log then ((str, level)->
-		if typeof factory.log == 'function'
-			factory.log str, level 
-		else
-			console.log level+"pool"+factory.name
-		) else ()->
+  me = {}
+  idleTimeoutMillis = factory.idleTimeoutMillis ||3000
+  reapInterval = factory.reapInterval||1000
+  refreshIdle = if ('refreshIdle' in factory)then factory.refreshIdle else true
+  availableObjects = []
+  waitingClients = new priorityQueue()
+  count =0
+  removeIdleScheduled = false
+  removedIdleTimer = null
+  draining = false
+  log = if factory.log then ((str, level)->
+    if typeof factory.log == 'function'
+      factory.log str, level 
+    else
+      console.log level+"pool"+factory.name
+    ) else ()->
 
-	factory.max = parseInt factory.max, 10
-	factory.min = parseInt factory.min, 10
+  factory.max = parseInt factory.max, 10
+  factory.min = parseInt factory.min, 10
 
-	factory.max = Math.max (if isNaN factory.max then 1 else  factory.max), 1
-	factory.min = Math.min (if isNaN factory.min then 0 else factory.min) , factory.max-1
+  factory.max = Math.max (if isNaN factory.max then 1 else  factory.max), 1
+  factory.min = Math.min (if isNaN factory.min then 0 else factory.min) , factory.max-1
  
-	me.acquire = (callback, priority)->
-		if draining
-			throw new Error "pool is draining error"
-			
-		else
-			waitingClients.enqueue callback, priority
-			dispense()
-			count < factory.max
+  me.acquire = (callback, priority)->
+    if draining
+      throw new Error "pool is draining error"
+      
+    else
+      waitingClients.enqueue callback, priority
+      dispense()
+      count < factory.max
 
-	dispense = () ->
-		waitingCount = waitingClients.size()
-		log "dispense() clients="+waitingCount+"available="+availableObjects, "info"
-		if waitingCount > 0
-			if 	availableObjects.length > 0
-				objTimeout = availableObjects[0]
-				availableObjects.shift()
-				clientCb = waitingClients.dequeue()
-				clientCb null, objTimeout.obj
+  dispense = () ->
+    waitingCount = waitingClients.size()
+    log "dispense() clients="+waitingCount+"available="+availableObjects, "info"
+    if waitingCount > 0
+      if  availableObjects.length > 0
+        objTimeout = availableObjects[0]
+        availableObjects.shift()
+        clientCb = waitingClients.dequeue()
+        clientCb null, objTimeout.obj
 
-			if count < factory.max
-				createResource()
-
-	createResource = ()->
-		console.log factory.create.toString()
-		count+=1
-		clientCb = waitingClients.dequeue()
-		factory.create (err, client)->
-			if(err)
-				console.log "createResource error"
-				count-=1
-				if clientCb
-					clientCb err, null
-				else
-					process.nextTick ()->
-						dispense()
-			else 
-				if clientCb 
-					return clientCb null, client
-				else 
-					me.release client
-
-	ensureMinimum =()->
-			while count < factory.min
+      if count < factory.max
         createResource()
 
-	me.release = (obj) ->
-		if(availableObjects.some (objWithTimeout)->
-			return objWithTimeout == obj)
-			return log "obj:"+obj+"has been released"
+  createResource = ()->
+    count+=1
+    clientCb = waitingClients.dequeue()
+    factory.create (err, client)->
+      if(err)
+        console.log "createResource error"
+        count-=1
+        if clientCb
+          clientCb err, null
+        else
+          process.nextTick ()->
+            dispense()
+      else 
+        if clientCb 
+          return clientCb null, client
+        else 
+          me.release client
 
-		else
-			objWithTimeout = { obj: obj, timeout: new Date().getTime()+idleTimeoutMillis}
-			availableObjects.push objWithTimeout
-			dispense()
+  ensureMinimum =()->
+      while count < factory.min
+        createResource()
 
-			scheduleRemoveIdle()
+  me.release = (obj) ->
+    if(availableObjects.some (objWithTimeout)->
+      return objWithTimeout == obj)
+      return log "obj:"+obj+"has been released"
 
-	scheduleRemoveIdle =()->
-			if(!removeIdleScheduled)
-				removeIdleScheduled = true
-				setTimeout removeIdle, idleTimeoutMillis
-	
-	removeIdle = ()->
-		now = new Date().getTime()
-		toRemove = []
-		for obj in availableObjects
-			if( now > obj.timeout && toRemove.length+factory.min <count)
-				toRemove.push obj
+    else
+      objWithTimeout = { obj: obj, timeout: new Date().getTime()+idleTimeoutMillis}
+      availableObjects.push objWithTimeout
+      dispense()
 
-		for aobj in toRemove
-			me.destroy aobj.obj
+      scheduleRemoveIdle()
 
-		removeIdleScheduled = false
-		if( availableObjects.length > 0 )
-			scheduleRemoveIdle()
-		else
-			log  "all availableobects has been removed"  
+  scheduleRemoveIdle =()->
+      if(!removeIdleScheduled)
+        removeIdleScheduled = true
+        setTimeout removeIdle, idleTimeoutMillis
+  
+  removeIdle = ()->
+    now = new Date().getTime()
+    toRemove = []
+    for obj in availableObjects
+      if( now > obj.timeout && toRemove.length+factory.min <count)
+        toRemove.push obj
 
-	me.destroy =(objclient)->
-		count -=1;
-		availableObjects = availableObjects.filter (objWithTimeout) ->
-			return objWithTimeout != objclient
+    for aobj in toRemove
+      me.destroy aobj.obj
 
-		factory.destroy objclient
-		ensureMinimum()
+    removeIdleScheduled = false
+    if( availableObjects.length > 0 )
+      scheduleRemoveIdle()
+    else
+      log  "all availableobects has been removed"  
 
-	me.execcmd = (args...) ->
-		hascallback = if typeof args[args.length-1] == "function" then true else false
-		if(! hascallback)
-			callback = ()->
-			args.push callback
+  me.destroy =(objclient)->
+    count -=1;
+    availableObjects = availableObjects.filter (objWithTimeout) ->
+      return objWithTimeout != objclient
 
-		else
-			callback = args[args.length-1]
+    factory.destroy objclient
+    ensureMinimum()
 
-		if typeof args[0] == "string" then cmd = args[0] else return callback "error has no cmd", null
-		
-		me.acquire (err, client)->
-			# console.log client
-			console.log "****||**"+err+"****||***"+client
-			console.log client.toString()
-			if(err)
-				callback "error while acquire client", null
-			else
-				#console.log "the client is " + client
-				# cmdcallback = ()->
-				# 	console.log "cmdcallback called"
-				# 	me.release client
-				# 	return callback.apply null, arguments
-				
-				# args.shift()
-				# args[args.length-1]=cmdcallback 
-				# console.log cmd, "args:"+args
-				# client[cmd].apply client, args
-				args.shift()
-				args.pop()
-				# console.log cmd
-				# console.log client[cmd]
-				# console.log client
+  me.execcmd = (args...) ->
+    hascallback = if typeof args[args.length-1] == "function" then true else false
+    if(! hascallback)
+      callback = ()->
+      args.push callback
 
-				client[cmd] args, (err, result)->
-					me.release client
-					if(err)
-						callback null, result
-					else
-						callback err, result
-	me.getCount = ()->
-		count
-	me.getAvailableObjects =()->
-		availableObjects
+    else
+      callback = args[args.length-1]
 
-	me.getWaitingClients = ()-> waitingClients
+     
+    if typeof args[0] != "string"
+        throw "first argument is not string"
+     
+    if typeof args[0] == "string" then cmd = args[0] else return callback "error has no cmd", null
+    
+    me.acquire (err, client)->
+      # console.log client
+      if(err)
+        callback "error while acquire client", null
+      else
+        #console.log "the client is " + client
+        # cmdcallback = ()->
+        #   console.log "cmdcallback called"
+        #   me.release client
+        #   return callback.apply null, arguments
+        
+        # args.shift()
+        # args[args.length-1]=cmdcallback 
+        # console.log cmd, "args:"+args
+        # client[cmd].apply client, args
+        args.shift()
+        args.pop()
+        # console.log cmd
+        # console.log client[cmd]
+        # console.log client
 
-	ensureMinimum()
-	return me
+        client[cmd] args, (err, result)->
+          me.release client
+          if(err)
+            callback null, result
+          else
+            callback err, result
+  me.getCount = ()->
+    count
+  me.getAvailableObjects =()->
+    availableObjects
+
+  me.getWaitingClients = ()-> waitingClients
+
+  ensureMinimum()
+  return me
 
