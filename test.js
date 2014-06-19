@@ -49,7 +49,20 @@ describe("test pool ", function() {
       console.log(err);
       console.log(result);
       mockClient.set.calledOnce.should.ok;
+      redis.createClient.restore();
       result.should.equal("OK");
+      return done();
+    });
+  });
+  it("test pool create err", function(done) {
+    var RedisPool;
+    sinon.stub(factory, "create", function(callback) {
+      return callback(new Error("create error"), null);
+    });
+    RedisPool = Pool.Pool(factory);
+    return RedisPool.acquire(function(err, result) {
+      err.should.eql(new Error("create error"));
+      factory.create.restore();
       return done();
     });
   });
@@ -130,6 +143,7 @@ describe("test pool ", function() {
     return RedisPool.acquire(function(err, clientid) {
       spy.callCount.should.equal(10);
       clientid.should.equal(9);
+      factory.create.restore();
       return done();
     });
   });

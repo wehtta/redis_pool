@@ -18,5 +18,7 @@ testredis:
 		testRedisPool.coffee
 
 test:
-	testpool
-	testRedisPool
+	@mocha \
+		--reporter spec \
+		$(MOCHA_OPTS) \
+		testRedisPool.coffee test.coffee
