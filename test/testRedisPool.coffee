@@ -1,7 +1,7 @@
 should = require "should"
 #RedisPool = require "./redispool.js"
 sinon = require "sinon"
-Pool= require "./pool.js"
+Pool= require "../lib/pool.js"
 eventEmitter = require('events').EventEmitter
 redis = require 'redis'
 

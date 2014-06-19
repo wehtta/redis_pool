@@ -9,16 +9,16 @@ testpool:
 	@mocha \
 		--reporter spec \
 		$(MOCHA_OPTS) \
-		test.coffee
+		./test/test.coffee
 
 testredis:
 	@mocha \
 		--reporter spec \
 		$(MOCHA_OPTS) \
-		testRedisPool.coffee
+		./test/testRedisPool.coffee
 
 test:
 	@mocha \
 		--reporter spec \
 		$(MOCHA_OPTS) \
-		testRedisPool.coffee test.coffee
+		./test/*.coffee

@@ -1,0 +1,23 @@
+{
+  "name": "redis_pool",
+  "version": "0.0.0",
+  "description": "enable directly execute command in the pool, rather than acquire a client first, the manipulate with the client",
+  "main": "pool.js",
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wehtta/redis_pool.git"
+  },
+  "keywords": [
+    "redis",
+    "pool"
+  ],
+  "author": "MatthewYu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wehtta/redis_pool/issues"
+  },
+  "homepage": "https://github.com/wehtta/redis_pool"
+}

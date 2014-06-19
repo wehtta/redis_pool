@@ -5,7 +5,7 @@ should = require("should");
 
 sinon = require("sinon");
 
-Pool = require("./pool.js");
+Pool = require("../lib/pool.js");
 
 eventEmitter = require('events').EventEmitter;
 
